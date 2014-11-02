@@ -20,6 +20,8 @@ import model.Node;
  * router or exit interface a packet should be forwarded. 2- Distance from its
  * destination
  * 
+ * Watch: http://www.youtube.com/watch?v=ylzAefKENXY
+ * 
  * @author mehmet
  *
  */
@@ -27,140 +29,74 @@ public class DistanceVectorRoutingImplementation {
 
 	Map<Integer, Node> nodesMap;
 
-	public DistanceVectorRoutingImplementation() {
+	public DistanceVectorRoutingImplementation(Node[] nodes) {
+		nodesMap = new HashMap<Integer, Node>(nodes.length);
+		for (Node node : nodes) {
+			nodesMap.put(node.getId(), node);
+		}
 
-		// all of the nodes in the topology
-		nodesMap = new HashMap<Integer, Node>();
-		
-		Node node1 = new Node(1);
-		Node node2 = new Node(2);
-		Node node3 = new Node(3);
-		Node node4 = new Node(4);
-		Node node5 = new Node(5);
-		Node node6 = new Node(6);
-		
-		nodesMap.put(1, node1);
-		nodesMap.put(2, node2);
-		nodesMap.put(3, node3);
-		nodesMap.put(4, node4);
-		nodesMap.put(5, node5);
-		nodesMap.put(6, node6);
-		
-		//undirected graph
-		node1.addNeighbour(2, 3.8);
-		node2.addNeighbour(1, 3.8);
-		
-		node1.addNeighbour(3, 1.2);
-		node3.addNeighbour(1, 1.2);
-		
-		node2.addNeighbour(4, 5.1);
-		node4.addNeighbour(2, 5.1);
-		
-		node3.addNeighbour(4, 5.2);
-		node4.addNeighbour(3, 5.2);
-		
-		node2.addNeighbour(5, 1.1);
-		node5.addNeighbour(2, 1.1);
-		
-		node4.addNeighbour(5, 3.2);
-		node5.addNeighbour(4, 3.2);
-		
-		node5.addNeighbour(6, 4.4);
-		node6.addNeighbour(5, 4.4);
-		
-		populate();
-	}
-
-	/**
-	 * Populate each nodes distance vectors for non-neighbors
-	 */
-	private void populate() {
 		for (Node value : nodesMap.values()) {
 			value.setNonNeighbours(nodesMap.keySet());
 		}
-
 	}
 
 	/**
-	 * returns the data member node treemap
-	 * 
-	 * @return
-	 */
-	public Map<Integer, Node> getNodes() {
-		return nodesMap;
-	}
-
-	/**
-	 * Sends the updated dVector to the specified neighbors
+	 * Sends the updated distanceVector to its neighbours
 	 * 
 	 * @param distanceVector
 	 * @param neighbors
 	 */
-	public void sendMessage(Map<Integer, Double> distanceVector, Set<Integer> neighbors, Integer fromNode) {
+	public void sendDistanceVector(Map<Integer, Double> distanceVector, Set<Integer> neighbors, Integer fromNode) {
 		for (Integer neighbour : neighbors) {
 			nodesMap.get(neighbour).receiveDistanceVector(distanceVector, fromNode);
 		}
 	}
 
-	/**
-	 * sends the initial distance vectors of each node to its neighbors
-	 */
-	public void init() {
+	public void initialize() {
+		// each node sends its distanceVector to its neighbours.
 		for (Node node : nodesMap.values()) {
-			sendMessage(node.getDistanceVector(), node.getNeighbours(), node.getId());
+			sendDistanceVector(node.getDistanceVector(), node.getNeighbours(), node.getId());
 		}
-
 	}
 
-	/**
-	 * Constructs and prints the final table to stdout
-	 */
-	public void printTable() {
+	public void findShortestPath(Node source, Node destination) {
+		initialize();
 
-		System.out.println("\t\t\tDistance/First Hop from Source to Destination\n");
-		System.out.println("\t\t\t       INF = 'not reachable'\n");
-		System.out.println("\t\t\t         Destination\n");
-		System.out.print("Source\t\t");
+		int nodeCount = nodesMap.keySet().size();
 
-		/*
-		 * prints a node to stdout for constructing a table as a new column
-		 * entry
-		 */
-		for (Integer nodeId : nodesMap.keySet()) {
-			System.out.print(nodeId + "\t");
-		}
-		System.out.println();
-		/*
-		 * formats table with dashes
-		 */
-		for (int i = 0; i < nodesMap.keySet().size(); i++) {
-			System.out.print("-----------");
-		}
+		// run till convergence which means no distanceVectors change with the
+		// algorithm
+		while (nodeCount > 0) {
+			nodeCount = nodesMap.keySet().size();
+			for (Integer s : nodesMap.keySet()) {
 
-		/*
-		 * appends node name to the table as a new row
-		 */
-		for (Integer nodeId : nodesMap.keySet()) {
-			System.out.println();
-			System.out.print("\t" + nodeId + "|\t");
-			
-			// gets the distance vector of the specified node
-			Map<Integer, Double> tm = nodesMap.get(nodeId).getDistanceVector();
-
-			/*
-			 * Prints the distance from the given node to its destination node
-			 * as well as the first hop node
-			 */
-			for (Integer j : tm.keySet()) {
-				Integer hop = nodesMap.get(nodeId).getFirstHopToDestination(j);
-				double dist = tm.get(j);
-				if (dist == -1.0) {
-					System.out.print("INF\t");
+				Node currentNode = nodesMap.get(s);
+				// If the algorithm updated the distance vector of the node,
+				// updated distanceVector sent to neighbours.
+				if (currentNode.runTheAlgorithm()) {
+					Map<Integer, Double> distanceVector = currentNode.getDistanceVector();
+					Set<Integer> neighbours = currentNode.getNeighbours();
+					sendDistanceVector(distanceVector, neighbours, s);
 				} else {
-					System.out.print(tm.get(j) + "/" + hop + "\t");
+					nodeCount--;
 				}
 			}
 		}
-		System.out.println();
+		
+		Node targetNode = null;
+		int sourceId = source.getId();
+		String path = String.valueOf(source.getId());
+		double totalCost = 0;
+		do {
+			int targetNodeId = source.getFirstHopToDestination(destination.getId());
+			targetNode = nodesMap.get(targetNodeId);
+			totalCost += source.getDistanceVector().get(targetNodeId);
+			path += "-" + targetNode.getId();
+			
+			source = targetNode;
+		} while (targetNode.getId() != destination.getId());
+		
+		System.out.println(String.format("Cost from %d to %d: %f", sourceId, destination.getId(), totalCost));
+		System.out.println("Path: " + path);
 	}
 }

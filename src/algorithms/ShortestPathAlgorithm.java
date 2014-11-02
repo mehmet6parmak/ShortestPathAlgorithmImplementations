@@ -24,7 +24,6 @@ public class ShortestPathAlgorithm {
 		this.graph = graph;
 	}
 	
-	
 	/**
 	 * 
 	 * @param source vertex
