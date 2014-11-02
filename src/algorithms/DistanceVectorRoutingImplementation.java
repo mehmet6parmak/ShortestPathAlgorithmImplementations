@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import model.Node;
+
 /**
  * 
  * From Wikipedia: A distance-vector routing protocol requires that a router
@@ -45,26 +47,26 @@ public class DistanceVectorRoutingImplementation {
 		nodesMap.put(6, node6);
 		
 		//undirected graph
-		node1.setNeighbor(2, 3.8);
-		node2.setNeighbor(1, 3.8);
+		node1.addNeighbour(2, 3.8);
+		node2.addNeighbour(1, 3.8);
 		
-		node1.setNeighbor(3, 1.2);
-		node3.setNeighbor(1, 1.2);
+		node1.addNeighbour(3, 1.2);
+		node3.addNeighbour(1, 1.2);
 		
-		node2.setNeighbor(4, 5.1);
-		node4.setNeighbor(2, 5.1);
+		node2.addNeighbour(4, 5.1);
+		node4.addNeighbour(2, 5.1);
 		
-		node3.setNeighbor(4, 5.2);
-		node4.setNeighbor(3, 5.2);
+		node3.addNeighbour(4, 5.2);
+		node4.addNeighbour(3, 5.2);
 		
-		node2.setNeighbor(5, 1.1);
-		node5.setNeighbor(2, 1.1);
+		node2.addNeighbour(5, 1.1);
+		node5.addNeighbour(2, 1.1);
 		
-		node4.setNeighbor(5, 3.2);
-		node5.setNeighbor(4, 3.2);
+		node4.addNeighbour(5, 3.2);
+		node5.addNeighbour(4, 3.2);
 		
-		node5.setNeighbor(6, 4.4);
-		node6.setNeighbor(5, 4.4);
+		node5.addNeighbour(6, 4.4);
+		node6.addNeighbour(5, 4.4);
 		
 		populate();
 	}
@@ -74,18 +76,9 @@ public class DistanceVectorRoutingImplementation {
 	 */
 	private void populate() {
 		for (Node value : nodesMap.values()) {
-			value.setNonNeighbors(nodesMap.keySet());
+			value.setNonNeighbours(nodesMap.keySet());
 		}
 
-	}
-
-	/**
-	 * Prints the distance vectors of each node in the topology
-	 */
-	public void print() {
-		for (Node value : nodesMap.values()) {
-			value.printDistanceVector();
-		}
 	}
 
 	/**
@@ -100,12 +93,12 @@ public class DistanceVectorRoutingImplementation {
 	/**
 	 * Sends the updated dVector to the specified neighbors
 	 * 
-	 * @param treeMap
+	 * @param distanceVector
 	 * @param neighbors
 	 */
-	public void sendMessage(Map<Integer, Double> treeMap, Set<Integer> neighbors, Integer fromNode) {
-		for (Integer s : neighbors) {
-			nodesMap.get(s).receiveDistanceVector(treeMap, fromNode);
+	public void sendMessage(Map<Integer, Double> distanceVector, Set<Integer> neighbors, Integer fromNode) {
+		for (Integer neighbour : neighbors) {
+			nodesMap.get(neighbour).receiveDistanceVector(distanceVector, fromNode);
 		}
 	}
 
@@ -113,8 +106,8 @@ public class DistanceVectorRoutingImplementation {
 	 * sends the initial distance vectors of each node to its neighbors
 	 */
 	public void init() {
-		for (Node n : nodesMap.values()) {
-			sendMessage(n.getDistanceVector(), n.getNeighbors(), n.getId());
+		for (Node node : nodesMap.values()) {
+			sendMessage(node.getDistanceVector(), node.getNeighbours(), node.getId());
 		}
 
 	}

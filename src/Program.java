@@ -3,11 +3,11 @@ import java.util.Set;
 
 import model.Edge;
 import model.Graph;
+import model.Node;
 import model.Vertex;
 import algorithms.BellmanFordImplementation;
 import algorithms.DijkstraImplementation;
 import algorithms.DistanceVectorRoutingImplementation;
-import algorithms.Node;
 import algorithms.ShortestPathAlgorithm;
 
 public class Program {
@@ -39,7 +39,7 @@ public class Program {
 				 */
 				if(node.get(s).runAlgorithm()){					
 					Map<Integer, Double> dVector = node.get(s).getDistanceVector();
-					Set<Integer> neighbors = node.get(s).getNeighbors();
+					Set<Integer> neighbors = node.get(s).getNeighbours();
 					vectorAlg.sendMessage(dVector, neighbors, s);
 				}
 				else{
